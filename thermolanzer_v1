@@ -1,0 +1,80 @@
+#include <OneWire.h> // protocolo de comunicação do sensor
+#include <DallasTemperature.h> // biblioteca para leitura do sensor
+#include <EEPROM.h> // descomentar se precisar gravar a eeprom 
+
+#define ONE_WIRE_BUS 2 //define o pino D2 para entrada do sensor
+OneWire oneWire(ONE_WIRE_BUS); // definições relativas a comunicação com sensor
+DallasTemperature sensors(&oneWire); // variável que receberá as temperaturas
+#define TEMPERATURE_PRECISION 8 //resolução do sensor 0,5°C
+
+int param_delta = 0; // endereço na eeprom para este parâmetro
+int param_max_caixa = 1; // endereço na eeprom para este parâmetro
+int param_min_placa = 2; // endereço na eeprom para este parâmetro
+int param_fator = 3; // endereço na eeprom para este parâmetro
+
+int bomba = 7; // acionamento da bomba será pelo pino 7
+int dif = 0; // armazena o resultado da diferença de temperatura
+
+void setup()   { 
+
+  sensors.begin(); // inicializa os sensores
+  Serial.begin(9600);
+  pinMode(bomba, OUTPUT); // define o pino D7 "bomba" como saída digital
+
+// EEPROM.write(param_delta, 10); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_max_caixa, 40); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_min_placa, 8); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_fator, 1); // descomentar para gravar os valores na eeprom
+// para gravar a eeprom: descomente as linhas, altere os números, carregue o programa e
+// rode uma vez. depois, comente as linhas e carregue novamente.
+}
+
+void loop(void)      {
+
+int max_caixa = EEPROM.read(param_max_caixa); // leitura da eeprom e armazenamento da variável 
+int delta = EEPROM.read(param_delta); // leitura da eeprom e armazenamento da variável 
+int min_placa = EEPROM.read(param_min_placa); // leitura da eeprom e armazenamento da variável
+int fator = EEPROM.read(param_fator); // leitura da eeprom e armazenamento da variável
+  
+sensors.requestTemperatures(); // aquisição das temperaturas, valor em float
+delay(100); // tempinho básico
+int temp_caixa = (sensors.getTempCByIndex(0)); // valor do sensor da caixa convertido para inteiro
+int temp_placa = (sensors.getTempCByIndex(1)); // valor do sensor da placa convertido para inteiro
+int dif = (temp_placa - temp_caixa);  
+
+// início da lógica de controle
+
+if((((temp_caixa < max_caixa) && (dif >= delta)) || (temp_placa <= min_placa))) 
+ 
+{
+digitalWrite(bomba, HIGH); // liga a bomba
+}
+if((((dif <= fator) && (temp_placa >= temp_caixa)) || (temp_caixa >= max_caixa) || ((temp_placa >= (min_placa + fator)) && (temp_placa < temp_caixa))))
+
+{
+digitalWrite(bomba, LOW);  // desliga a bomba      
+}
+
+// final da lógica de controle
+ 
+Serial.print("T caixa: ");  
+Serial.println(temp_caixa); //escreve na serial a temperatura da caixa
+Serial.print("T placa: ");
+Serial.println(temp_placa); //escreve na serial a temperatura da placa
+Serial.print("T dif: ");
+Serial.println(dif); //escreve na serial a diferença de temperarura (placa - caixa)
+Serial.print("Delta: ");
+Serial.println(delta); //escreve na serial a temperatura máxima diferencial para ligar a bomba da placa
+Serial.print("Tmax caixa: ");
+Serial.println(max_caixa); //escreve na serial a temperatura máxima da caixa
+Serial.print("Tmin placa: ");
+Serial.println(min_placa); //escreve na serial a temperatura mínima da placa (anti-congelamento)
+Serial.print("Fator: ");
+Serial.println(fator); //escreve na serial a temperatura mínima diferencial para desligamento da bomba da placa
+Serial.print("Status da bomba: ");
+Serial.println(bomba); //escreve na serial o status da bomba da placa
+Serial.println("");
+
+delay(3000);
+
+} // fim do programa
