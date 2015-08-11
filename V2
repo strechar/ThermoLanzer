@@ -1,0 +1,145 @@
+#include <OneWire.h> // protocolo de comunicação do sensor
+#include <DallasTemperature.h> // biblioteca para leitura do sensor
+#include <EEPROM.h> // descomentar se precisar gravar a eeprom
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_PCD8544.h>
+#include <SPI.h>
+
+Adafruit_PCD8544 display = Adafruit_PCD8544(7, 6, 5, 4, 3);
+
+//Atenção! verifique se a ligação do display está conforme a tabela abaixo
+// pin 7 - Serial clock out (SCLK)
+// pin 6 - Serial data out (DIN)
+// pin 5 - Data/Command select (D/C)
+// pin 4 - LCD chip select (CS)
+// pin 3 - LCD reset (RST)
+
+#define ONE_WIRE_BUS 2 //define o pino D2 para entrada do sensor
+OneWire oneWire(ONE_WIRE_BUS); // definições relativas a comunicação com sensor
+DallasTemperature sensors(&oneWire); // variável que receberá as temperaturas
+#define TEMPERATURE_PRECISION 8 //resolução do sensor 0,5°C
+
+int param_delta = 0; // endereço na eeprom para este parâmetro
+int param_max_caixa = 1; // endereço na eeprom para este parâmetro
+int param_min_placa = 2; // endereço na eeprom para este parâmetro
+int param_fator = 3; // endereço na eeprom para este parâmetro
+
+int bomba = 10; // acionamento da bomba será pelo pino 10
+int dif = 0; // armazena o resultado da diferença de temperatura
+int status = 0; // variável que indica o status da bomba - 0 ou 1
+
+void setup()   {
+
+    display.begin();
+    display.setContrast(50);
+ 
+  sensors.begin(); // inicializa os sensores
+  Serial.begin(9600);
+  pinMode(bomba, OUTPUT); // define o pino D7 "bomba" como saída digital
+
+// EEPROM.write(param_delta, 8); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_max_caixa, 40); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_min_placa, 6); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_fator, 2); // descomentar para gravar os valores na eeprom
+// para gravar a eeprom: descomente as linhas, altere os números, carregue o programa e
+// rode uma vez. depois, comente as linhas e carregue novamente.
+}
+
+void loop(void)      {
+ 
+
+int max_caixa = EEPROM.read(param_max_caixa); // leitura da eeprom e armazenamento da variável
+int delta = EEPROM.read(param_delta); // leitura da eeprom e armazenamento da variável
+int min_placa = EEPROM.read(param_min_placa); // leitura da eeprom e armazenamento da variável
+int fator = EEPROM.read(param_fator); // leitura da eeprom e armazenamento da variável
+ 
+sensors.requestTemperatures(); // aquisição das temperaturas, valor em float
+delay(100); // tempinho básico
+int temp_caixa = (sensors.getTempCByIndex(1)); // valor do sensor da caixa convertido para inteiro
+int temp_placa = (sensors.getTempCByIndex(0)); // valor do sensor da placa convertido para inteiro
+int dif = (temp_placa - temp_caixa);  
+
+// início da lógica de controle
+
+if((((temp_caixa < max_caixa) && (dif >= delta)) || (temp_placa <= min_placa)))
+ 
+{
+digitalWrite(bomba, HIGH); // liga a bomba
+status = 1;
+}
+if((((dif <= fator) && (temp_placa >= temp_caixa)) || (temp_caixa >= max_caixa) || ((temp_placa >= (min_placa + fator)) && (temp_placa < temp_caixa))))
+
+{
+digitalWrite(bomba, LOW);  // desliga a bomba
+status = 0;     
+}
+
+// final da lógica de controle
+ 
+//Serial.print("T caixa: ");  
+//Serial.println(temp_caixa); //escreve na serial a temperatura da caixa
+//Serial.print("T placa: ");
+//Serial.println(temp_placa); //escreve na serial a temperatura da placa
+//Serial.print("T dif: ");
+//Serial.println(dif); //escreve na serial a diferença de temperarura (placa - caixa)
+//Serial.print("Delta: ");
+//Serial.println(delta); //escreve na serial a temperatura máxima diferencial para ligar a bomba da placa
+//Serial.print("Tmax caixa: ");
+//Serial.println(max_caixa); //escreve na serial a temperatura máxima da caixa
+//Serial.print("Tmin placa: ");
+//Serial.println(min_placa); //escreve na serial a temperatura mínima da placa (anti-congelamento)
+//Serial.print("Fator: ");
+//Serial.println(fator); //escreve na serial a temperatura mínima diferencial para desligamento da bomba da placa
+//Serial.print("Status da bomba: ");
+//Serial.println(status); //escreve na serial o status da bomba da placa
+//Serial.println("ThermoLanzer...");
+
+display.clearDisplay();
+
+  display.setCursor(0,0);
+  display.print ("TpCx");
+  display.setCursor(27,0);
+  display.println (temp_caixa);
+
+  display.setCursor(0,12);
+  display.print ("TpPl");
+  display.setCursor(27,12);
+  display.println (temp_placa);
+ 
+  display.setCursor(0,24);
+  display.print ("Dife");
+  display.setCursor(27,24);
+  display.println (dif);
+
+  display.setCursor(0,36);
+  display.print ("Bomb");
+  display.setCursor(27,36);
+  display.println (status);
+ 
+  display.setCursor(45,0);
+  display.print ("MxCx");
+  display.setCursor(72,0);
+  display.println (max_caixa);
+ 
+  display.setCursor(45,12);
+  display.print ("MiPl");
+  display.setCursor(72,12);
+  display.println (min_placa);
+
+  display.setCursor(45,24);
+  display.print ("Liga");
+  display.setCursor(72,24);
+  display.println (delta);
+ 
+  display.setCursor(45,36);
+  display.print ("Desl");
+  display.setCursor(72,36);
+  display.println (fator);
+ 
+  display.display();
+
+
+delay(900);
+
+} // fim do programa
