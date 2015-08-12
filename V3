@@ -85,23 +85,6 @@ void loop(void)      {
 
   // final da lógica de controle
 
-  //Serial.print("T caixa: ");
-  //Serial.println(temp_caixa); //escreve na serial a temperatura da caixa
-  //Serial.print("T placa: ");
-  //Serial.println(temp_placa); //escreve na serial a temperatura da placa
-  //Serial.print("T dif: ");
-  //Serial.println(dif); //escreve na serial a diferença de temperarura (placa - caixa)
-  //Serial.print("Delta: ");
-  //Serial.println(delta); //escreve na serial a temperatura máxima diferencial para ligar a bomba da placa
-  //Serial.print("Tmax caixa: ");
-  //Serial.println(max_caixa); //escreve na serial a temperatura máxima da caixa
-  //Serial.print("Tmin placa: ");
-  //Serial.println(min_placa); //escreve na serial a temperatura mínima da placa (anti-congelamento)
-  //Serial.print("Fator: ");
-  //Serial.println(fator); //escreve na serial a temperatura mínima diferencial para desligamento da bomba da placa
-  //Serial.print("Status da bomba: ");
-  //Serial.println(status); //escreve na serial o status da bomba da placa
-  //Serial.println("ThermoLanzer...");
 
   Serial.println (string_a + string_caixa);
   delay (1000);
@@ -109,6 +92,8 @@ void loop(void)      {
   delay (1000);
   Serial.println (string_c + string_bomba);  
   delay (1000);
+  Serial.println (string_d + string_dif);  
+  delay (1000);  
   Serial.println (string_e + string_liga);  
   delay (1000);
   Serial.println (string_f + string_desliga);  
