@@ -58,6 +58,8 @@ void loop(void)      {
   String string_placa =  String(temp_placa);
   String string_b =  String("b");
   String string_b =  String("c");
+  String string_placa =  String(dif);
+  String string_b =  String("d");
   
   // início da lógica de controle
 
