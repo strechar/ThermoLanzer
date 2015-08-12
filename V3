@@ -54,23 +54,26 @@ void loop(void)      {
 
 //declaração das Strings para o aplicativo
   String string_caixa =  String(temp_caixa);
-  String string_a =  String("Temp Caixa:");
+  String string_a =  String("a");
   String string_placa =  String(temp_placa);
-  String string_b =  String("  Temp Placa:");
+  String string_b =  String("b");
+  String string_b =  String("c");
   
   // início da lógica de controle
 
   if ((((temp_caixa < max_caixa) && (dif >= delta)) || (temp_placa <= min_placa)))
 
   {
-    digitalWrite(bomba, HIGH); // liga a bomba
-    status = 1;
+  digitalWrite(bomba, HIGH); // liga a bomba
+  status = 1;
+  String string_bomba =  String("on");
   }
   if ((((dif <= fator) && (temp_placa >= temp_caixa)) || (temp_caixa >= max_caixa) || ((temp_placa >= (min_placa + fator)) && (temp_placa < temp_caixa))))
 
   {
-    digitalWrite(bomba, LOW);  // desliga a bomba
-    status = 0;
+  digitalWrite(bomba, LOW);  // desliga a bomba
+  status = 0;
+  String string_bomba =  String("off");
   }
 
   // final da lógica de controle
@@ -93,8 +96,12 @@ void loop(void)      {
   //Serial.println(status); //escreve na serial o status da bomba da placa
   //Serial.println("ThermoLanzer...");
 
-  Serial.println (string_a + string_caixa + string_b + string_placa);
+  Serial.println (string_a + string_caixa);
   delay (1000);
-   
+  Serial.println (string_b + string_placa);
+  delay (1000);
+  Serial.println (string_c + string_bomba);  
+  delay (1000);
+ 
 
 } // fim do programa
