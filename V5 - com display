@@ -1,0 +1,151 @@
+#include <OneWire.h> // protocolo de comunicação do sensor
+#include <DallasTemperature.h> // biblioteca para leitura do sensor
+#include <EEPROM.h> // descomentar se precisar gravar a eeprom
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_PCD8544.h>
+#include <SPI.h>
+
+Adafruit_PCD8544 display = Adafruit_PCD8544(7, 6, 5, 4, 3);
+
+//Atenção! verifique se a ligação do display está conforme a tabela abaixo
+// pin 7 - Serial clock out (SCLK)
+// pin 6 - Serial data out (DIN)
+// pin 5 - Data/Command select (D/C)
+// pin 4 - LCD chip select (CS)
+// pin 3 - LCD reset (RST)
+
+#define ONE_WIRE_BUS 2 //define o pino D2 para entrada do sensor
+OneWire oneWire(ONE_WIRE_BUS); // definições relativas a comunicação com sensor
+DallasTemperature sensors(&oneWire); // variável que receberá as temperaturas
+#define TEMPERATURE_PRECISION 8 //resolução do sensor 0,5°C
+
+int param_delta = 0; // endereço na eeprom para este parâmetro
+int param_max_caixa = 1; // endereço na eeprom para este parâmetro
+int param_min_placa = 2; // endereço na eeprom para este parâmetro
+int param_fator = 3; // endereço na eeprom para este parâmetro
+
+int bomba = 10; // acionamento da bomba será pelo pino 10
+int dif = 0; // armazena o resultado da diferença de temperatura
+int status = 0; // variável que indica o status da bomba - 0 ou 1
+int pisca = 13; // acionamento do led na placa do arduino será pelo pino 13
+
+void setup()   {
+
+    display.begin();
+    display.setContrast(50);
+ 
+  sensors.begin(); // inicializa os sensores
+  Serial.begin(9600);
+  pinMode(bomba, OUTPUT); // define o pino D10 "bomba" como saída digital
+  pinMode(pisca, OUTPUT); // define o pino D13 "pisca" como saída digital
+
+// EEPROM.write(param_delta, 2); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_max_caixa, 40); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_min_placa, 6); // descomentar para gravar os valores na eeprom
+// EEPROM.write(param_fator, 0); // descomentar para gravar os valores na eeprom
+// para gravar a eeprom: descomente as linhas, altere os números, carregue o programa e
+// rode uma vez. depois, comente as linhas e carregue novamente.
+}
+
+void loop(void)      {
+
+digitalWrite(pisca, HIGH); // liga o led na placa do arduino - somente para saber se o programa está rodando se o display não estiver ligado.
+
+int max_caixa = EEPROM.read(param_max_caixa); // leitura da eeprom e armazenamento da variável
+int delta = EEPROM.read(param_delta); // leitura da eeprom e armazenamento da variável
+int min_placa = EEPROM.read(param_min_placa); // leitura da eeprom e armazenamento da variável
+int fator = EEPROM.read(param_fator); // leitura da eeprom e armazenamento da variável
+
+sensors.requestTemperatures(); // aquisição das temperaturas, valor em float
+delay(100); // tempinho básico para evitar erros na aquisição de dados dos sensores
+
+int temp_caixa = (sensors.getTempCByIndex(1)); // valor do sensor da caixa convertido para inteiro
+int temp_placa = (sensors.getTempCByIndex(0)); // valor do sensor da placa convertido para inteiro
+int dif = (temp_placa - temp_caixa);  
+
+// início da lógica de controle
+
+if((((temp_caixa < max_caixa) && (dif >= delta)) || (temp_placa <= min_placa)))
+ 
+{
+digitalWrite(bomba, HIGH); // liga a bomba
+status = 1;
+}
+if((((dif <= fator) && (temp_placa >= temp_caixa)) || (temp_caixa >= max_caixa) || ((temp_placa >= (min_placa + 6)) && (temp_placa < temp_caixa))))
+
+{
+digitalWrite(bomba, LOW);  // desliga a bomba
+status = 0;     
+}
+
+// final da lógica de controle
+ 
+delay (1000);
+Serial.println (temp_caixa + 300);
+delay (1000);
+Serial.println (temp_placa + 600);
+delay (1000);
+Serial.println (dif + 900);
+delay (1000);
+Serial.println (delta + 1200);  
+delay (1000);
+Serial.println (fator + 1500);
+delay (1000); 
+Serial.println (max_caixa + 1800);
+delay (1000); 
+Serial.println (min_placa + 2100);
+delay (1000);    
+
+display.clearDisplay();
+
+  display.setCursor(0,0);
+  display.print ("TpCx");
+  display.setCursor(27,0);
+  display.println (temp_caixa);
+
+  display.setCursor(0,12);
+  display.print ("TpPl");
+  display.setCursor(27,12);
+  display.println (temp_placa);
+ 
+  display.setCursor(0,24);
+  display.print ("Dife");
+  display.setCursor(27,24);
+  display.println (dif);
+
+  display.setCursor(0,36);
+  display.print ("Bomb");
+  display.setCursor(27,36);
+  display.println (status);
+ 
+  display.setCursor(45,0);
+  display.print ("MxCx");
+  display.setCursor(72,0);
+  display.println (max_caixa);
+ 
+  display.setCursor(45,12);
+  display.print ("MiPl");
+  display.setCursor(72,12);
+  display.println (min_placa);
+
+  display.setCursor(45,24);
+  display.print ("Liga");
+  display.setCursor(72,24);
+  display.println (delta);
+ 
+  display.setCursor(45,36);
+  display.print ("Desl");
+  display.setCursor(72,36);
+  display.println (fator);
+ 
+  display.display();
+
+digitalWrite(pisca, LOW); // desliga o led na placa do arduino
+
+delay(800);
+
+} // fim do programa
+
+
+
